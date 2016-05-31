@@ -135,10 +135,10 @@ def get_path_smooth_t(t, x, y, begin_interp=0, end_interp=-1, ttol=0.1, smoothin
     # TODO: evaluate the usage of weights
     if len(x)>4:
         splxt = interpolate.UnivariateSpline(t, x)
-        splxs.set_smoothing_factor(smoothing_factor)
+        splxt.set_smoothing_factor(smoothing_factor)
         xt = splxt(_tt)
         splyt = interpolate.UnivariateSpline(t, y)
-        splys.set_smoothing_factor(smoothing_factor)
+        splyt.set_smoothing_factor(smoothing_factor)
         yt = splyt(_tt)
     else:
         print x
@@ -150,7 +150,7 @@ def get_path_smooth_t(t, x, y, begin_interp=0, end_interp=-1, ttol=0.1, smoothin
 
 
 
-def get_area(x,y,):
+#def get_area(x,y,):
 
 
 
