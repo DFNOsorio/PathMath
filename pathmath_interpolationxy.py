@@ -149,6 +149,7 @@ def get_path_smooth_t(t, x, y, begin_interp=0, end_interp=-1, ttol=0.1, smoothin
 
     return _tt, xt, yt
 
+#####
 
 def join_and_sort(x, y):
     x_y = [[x[i], y[i], i] for i in arange(0, len(x))]
@@ -211,6 +212,7 @@ def get_area(x, y, scanning_window=1):
     scanning_window, points_total, points_on_window, index_on_window = get_windows(x, y, scanning_window)
     return scanning_window
 
+#####
 
 def get_s(x, y):
     """ This function calculates the distance traveled.
