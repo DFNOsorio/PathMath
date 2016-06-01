@@ -2,6 +2,7 @@ import numpy.random
 from numpy import *
 from pylab import *
 from scipy import interpolate
+import random
 import os
 from numpy.testing import assert_almost_equal, assert_approx_equal
 
@@ -119,21 +120,21 @@ def get_path_smooth_t(t, x, y, begin_interp=0, end_interp=-1, ttol=0.1, smoothin
     x = x[begin_interp:end_interp]
     y = y[begin_interp:end_interp]
 
-    if len(find(diff(x)==0))>0 and len(find(diff(y)==0))>0:
-        for i in find(diff(x)==0):
-            if i in find(diff(y)==0):
+    if len(find(diff(x) == 0)) > 0 and len(find(diff(y) == 0)) > 0:
+        for i in find(diff(x) == 0):
+            if i in find(diff(y) == 0):
                 _x = x[:i]
                 x_ = x[i+1:]
-                x = concatenate((_x,x_))
+                x = concatenate((_x, x_))
                 _y = y[:i]
                 y_ = y[i+1:]
-                y = concatenate((_y,y_))
+                y = concatenate((_y, y_))
 
     t = t[:len(x)]
     _tt = arange(t[0], t[-1], ttol)
 
     # TODO: evaluate the usage of weights
-    if len(x)>4:
+    if len(x) > 4:
         splxt = interpolate.UnivariateSpline(t, x)
         splxt.set_smoothing_factor(smoothing_factor)
         xt = splxt(_tt)
@@ -149,9 +150,66 @@ def get_path_smooth_t(t, x, y, begin_interp=0, end_interp=-1, ttol=0.1, smoothin
     return _tt, xt, yt
 
 
+def join_and_sort(x, y):
+    x_y = [[x[i], y[i], i] for i in arange(0, len(x))]
+    x_y_sorted = array(sorted(x_y, key=lambda h: h[0]))
 
-#def get_area(x,y,):
+    new_x = x_y_sorted[:, 0]
+    new_y = x_y_sorted[:, 1]
+    original_indexs = x_y_sorted[:, 2]
 
+    return new_x, new_y, x_y_sorted
+
+
+def get_windows(x, y, scanning_window = 1):
+    def list_populator(indexes):
+        points = []
+        index_on_window.append(indexes)
+        [[points.append([new_x[i], new_y[i]]), points_total.append([new_x[i], new_y[i]])] for i in indexes]
+        points_on_window.append(points)
+
+
+    new_x, new_y, x_y_sorted = join_and_sort(x, y)
+    window_end = new_x[0]
+    points_on_window = []
+    points_total = []
+    index_on_window = []
+
+    if scanning_window != 1:
+        scanning_window = mean(abs(diff(new_x)))
+
+    plt.xticks(arange(min(x), max(x) + scanning_window, scanning_window))
+    while window_end < new_x[len(new_x)-1]:
+
+        window_start = window_end
+        window_end = window_start + scanning_window
+
+        indexes = list(where(logical_and(new_x >= window_start, new_x < window_end))[0])
+
+        if len(indexes) != 0 and len(indexes) <= 2:
+            list_populator(indexes)
+
+        elif len(indexes) > 2:
+            plt.plot(new_x[indexes], new_y[indexes], 'rd')
+            y_vec = new_y[indexes]
+            max_y = find(y_vec == max(y_vec))[0]
+            min_y = find(y_vec == min(y_vec))[0]
+            indexes = array(indexes)
+            indexes = list(indexes[[max_y, min_y]])
+            list_populator(indexes)
+
+    points_total = array(points_total)
+    points_on_window = array(points_on_window)
+    index_on_window = array(index_on_window)
+
+    plt.plot(points_total[:, 0], points_total[:, 1],'-go')
+
+    return scanning_window, points_total, points_on_window, index_on_window
+
+
+def get_area(x, y, scanning_window=1):
+    scanning_window, points_total, points_on_window, index_on_window = get_windows(x, y, scanning_window)
+    return scanning_window
 
 
 def get_s(x, y):
@@ -275,7 +333,7 @@ def check_incremental_s(s):
 
 def regularPlot(x,y,title,xlabel,ylabel,fontsize = 20):
   fig = plt.figure()
-  plt.plot(x,y)
+  plt.plot(x,y,'o')
   plt.xlabel(xlabel)
   plt.ylabel(ylabel)
   plt.title(title, fontsize = fontsize)
@@ -311,24 +369,44 @@ def overlap(xx,yy,title,xlabel,ylabel,legend,fontsize = 20):
 #                          #
 ############################
 
+#x = [-3.7,-3.4,-2.7,-2.3,-2.2,-2.1,-2.5,-3.0,-3.5,-4.0]
+#y = [3.1,3.5,3.2,3.0,2.3,1.3,0.5,0.0,1.0,2.0]
+x = []
+y = []
+[[x.append(random.uniform(-2, 2)), y.append(random.uniform(-2, 2))] for _ in arange(0, 100)]
 
-[t,x,y] =  generate_circle(r=2)
+figure1 = regularPlot(x, y, "Circle", "x", "y")
+
+window_size = get_area(x, y, scanning_window=0 )
 
 
-
-figure1 = regularPlot(x,y,"Circle","x","y")
-
-s = get_s(x,y)
-v = get_v(s,t)
-
-figure2 = regularPlot(t,s,"Path","t","s")
-
-ss, xs, ys, vs, angle_value, curvature, tt = get_path_smooth_s(t, s, x, y, begin_interp=0, end_interp=-1, stol=0.1, smoothing_factor=0.01)
-
-figure3 = twoPlots([x,xs],[y,ys],["normal","interpolated"],["x","xs"],["y","ys"],fontsizes = [20,20])
-figure4 = overlap([x,xs],[y,ys],"overlap","x","y",["normal","interpolated"])
-
-splxs = interpolate.UnivariateSpline(x, y)
 
 
 plt.show()
+
+
+# [t,x,y] =  generate_circle(r=2)
+#
+#
+#
+# #figure1 = regularPlot(x,y,"Circle","x","y")
+#
+# s = get_s(x,y)
+# v = get_v(s,t)
+#
+#
+#
+# #figure2 = regularPlot(t,s,"Path","t","s")
+#
+#
+# ss, xs, ys, vs, angle_value, curvature, tt = get_path_smooth_s(t, s, x, y, begin_interp=0, end_interp=-1, stol=0.1, smoothing_factor=0.01)
+#
+#
+#
+# #figure3 = twoPlots([x,xs],[y,ys],["normal","interpolated"],["x","xs"],["y","ys"],fontsizes = [20,20])
+# #figure4 = overlap([x,xs],[y,ys],"overlap","x","y",["normal","interpolated"])
+#
+# splxs = interpolate.UnivariateSpline(x, y)
+#
+#
+# plt.show()
