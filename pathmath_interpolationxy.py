@@ -151,18 +151,18 @@ def get_path_smooth_t(t, x, y, begin_interp=0, end_interp=-1, ttol=0.1, smoothin
 
 #####
 
+
 def join_and_sort(x, y):
     x_y = [[x[i], y[i], i] for i in arange(0, len(x))]
     x_y_sorted = array(sorted(x_y, key=lambda h: h[0]))
 
     new_x = x_y_sorted[:, 0]
     new_y = x_y_sorted[:, 1]
-    original_indexs = x_y_sorted[:, 2]
 
     return new_x, new_y, x_y_sorted
 
 
-def get_windows(x, y, scanning_window = 1):
+def get_windows(x, y, scanning_window = 0):
     def list_populator(indexes):
         points = []
         index_on_window.append(indexes)
@@ -171,16 +171,16 @@ def get_windows(x, y, scanning_window = 1):
 
 
     new_x, new_y, x_y_sorted = join_and_sort(x, y)
+
     window_end = new_x[0]
     points_on_window = []
     points_total = []
     index_on_window = []
 
-    if scanning_window != 1:
+    if scanning_window == 0:
         scanning_window = mean(abs(diff(new_x)))
 
-    plt.xticks(arange(min(x), max(x) + scanning_window, scanning_window))
-    while window_end < new_x[len(new_x)-1]:
+    while window_end < new_x[len(new_x)-1] + scanning_window:
 
         window_start = window_end
         window_end = window_start + scanning_window
@@ -191,7 +191,6 @@ def get_windows(x, y, scanning_window = 1):
             list_populator(indexes)
 
         elif len(indexes) > 2:
-            plt.plot(new_x[indexes], new_y[indexes], 'rd')
             y_vec = new_y[indexes]
             max_y = find(y_vec == max(y_vec))[0]
             min_y = find(y_vec == min(y_vec))[0]
@@ -203,16 +202,42 @@ def get_windows(x, y, scanning_window = 1):
     points_on_window = array(points_on_window)
     index_on_window = array(index_on_window)
 
-    plt.plot(points_total[:, 0], points_total[:, 1],'-go')
-
     return scanning_window, points_total, points_on_window, index_on_window
 
 
-def get_area(x, y, scanning_window=1):
-    scanning_window, points_total, points_on_window, index_on_window = get_windows(x, y, scanning_window)
-    return scanning_window
+def area_contour(points_total, show_plot = False):
+    points_positive = points_total[(points_total[:, 1] >= 0), :]
+    points_negative = points_total[(points_total[:, 1] < 0), :]
 
-#####
+    points_reshape = points_positive
+    points_reshape = concatenate([points_reshape, flipud(points_negative), [points_positive[0, :]]])
+
+    if show_plot:
+        regularPlot(points_reshape[:, 0], points_reshape[:, 1], 'Area Contour', 'x', 'y')
+    return points_reshape
+
+
+def area_calc(contour_array):
+    x = contour_array[:, 0]
+    y = contour_array[:, 1]
+
+    area = 0
+    for i in arange(1, len(y) - 1, 1):
+        area += (y[i - 1] * x[i] - x[i - 1] * y[i])
+    return area / 2.0
+
+
+def get_area(x, y, scanning_window=1):
+
+    scanning_window, points_total, points_on_window, index_on_window = get_windows(x, y, scanning_window)
+
+    contour_array = area_contour(points_total, True)
+
+    area = area_calc(contour_array)
+
+    return area
+
+###
 
 def get_s(x, y):
     """ This function calculates the distance traveled.
@@ -335,7 +360,7 @@ def check_incremental_s(s):
 
 def regularPlot(x,y,title,xlabel,ylabel,fontsize = 20):
   fig = plt.figure()
-  plt.plot(x,y,'o')
+  plt.plot(x,y)
   plt.xlabel(xlabel)
   plt.ylabel(ylabel)
   plt.title(title, fontsize = fontsize)
@@ -346,7 +371,7 @@ def twoPlots(xx,yy,titles,xlabels,ylabels,fontsizes = [20,20]):
   fig = plt.figure()
   for i in xrange(0,2):
     plt.subplot(2,1,i+1)
-    plt.plot(xx[i],yy[i])
+    plt.plot(xx[i],yy[i],'o--')
     plt.xlabel(xlabels[i])
     plt.ylabel(ylabels[i])
     plt.title(titles[i], fontsize = fontsizes[i])
@@ -371,17 +396,25 @@ def overlap(xx,yy,title,xlabel,ylabel,legend,fontsize = 20):
 #                          #
 ############################
 
-#x = [-3.7,-3.4,-2.7,-2.3,-2.2,-2.1,-2.5,-3.0,-3.5,-4.0]
-#y = [3.1,3.5,3.2,3.0,2.3,1.3,0.5,0.0,1.0,2.0]
+
 x = []
 y = []
-[[x.append(random.uniform(-2, 2)), y.append(random.uniform(-2, 2))] for _ in arange(0, 100)]
-
-figure1 = regularPlot(x, y, "Circle", "x", "y")
-
-window_size = get_area(x, y, scanning_window=0 )
+[[x.append(random.uniform(-2, 40)), y.append(random.uniform(-40, 15))] for _ in arange(0, 20)]
 
 
+
+#[t,x,y] = generate_circle(r=2)
+
+#x = [0, 10, 20, 30, 40]
+#y = [0, 10, -10, 5, -10]
+
+
+
+figure1 = regularPlot(x, y, "Generated Data", "x", "y")
+
+area = get_area(x, y, scanning_window=0)
+
+print area
 
 
 plt.show()
