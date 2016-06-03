@@ -8,6 +8,8 @@ from numpy.testing import assert_almost_equal, assert_approx_equal
 
 import seaborn
 import matplotlib.pyplot as plt
+from bokeh.plotting import figure, output_file, show
+
 
 
 
@@ -186,25 +188,34 @@ def join_and_sort(x, y):
 
 def get_windows(x, y, scanning_window=0):
 
-    """ This function joins x and y arrays and sorts array elements using the x axis
+    """ This function gets the contour points for scattered data. It segments the data along the x axis using
+    predetermined window size and finds the maximum and minimum y for that interval.
 
-        Parameters
-        ----------
-        x: array
-          x axis coordinates
-        y: array
-          y axis coordinates
+    Parameters
+    ----------
+    x: array
+        x axis coordinates
 
-        Returns
-        -------
-        new_x: array
-            x axis coordinates sorted
+    y: array
+        y axis coordinates
 
-        new_y: array
-            y axis coordinates sorted
+    scanning_window: float
+        Value for the segmentation window. 0 to use the mean distance between points.
 
-        x_y_sorted: array
-            joint sorted x and y coordinates
+    Returns
+    -------
+    scanning_window: float
+        Value for the segmentation window.
+
+    points_total: array
+        Array containing all the contour points
+
+    points_on_window: array
+        Array containing all the contour points, stored by scanning window.
+
+    index_on_window: array
+        Array containing the indexes for the contour points, stored by scanning window.
+
         """
 
     def list_populator(indexes):
@@ -212,7 +223,6 @@ def get_windows(x, y, scanning_window=0):
         index_on_window.append(indexes)
         [[points.append([new_x[i], new_y[i]]), points_total.append([new_x[i], new_y[i]])] for i in indexes]
         points_on_window.append(points)
-
 
     new_x, new_y, x_y_sorted = join_and_sort(x, y)
 
@@ -249,7 +259,26 @@ def get_windows(x, y, scanning_window=0):
     return scanning_window, points_total, points_on_window, index_on_window
 
 
-def area_contour(points_total, show_plot = False):
+def area_contour(points_total, show_plot=False):
+
+    """ This function sorts the contour data, using first all the positive y points and afterwards adds all the negative
+    points. It also adds the first point again in order to close the contour.
+
+        Parameters
+        ----------
+        points_total: array
+            x axis coordinates
+
+        show_plot: boolean
+            option to plot the contour
+
+        Returns
+        -------
+        points_reshape: array
+            contour path
+
+        """
+
     points_positive = points_total[(points_total[:, 1] >= 0), :]
     points_negative = points_total[(points_total[:, 1] < 0), :]
 
@@ -257,21 +286,61 @@ def area_contour(points_total, show_plot = False):
     points_reshape = concatenate([points_reshape, flipud(points_negative), [points_positive[0, :]]])
 
     if show_plot:
-        regularPlot(points_reshape[:, 0], points_reshape[:, 1], 'Area Contour', 'x', 'y')
+
+        plt.plot(points_reshape[:, 0], points_reshape[:, 1], 'r--')
+        regular_plot(points_reshape[:, 0], points_reshape[:, 1], 'Area Contour', 'x', 'y', plot_line='r-')
+        plt.fill_between(points_reshape[:, 0], points_reshape[:, 1])
+
     return points_reshape
 
 
 def area_calc(contour_array):
+
+    """ This function uses the contour path to calculate the area, using Green's theorem.
+
+        Parameters
+        ----------
+        contour_array: array
+            contour path
+
+        Returns
+        -------
+        area: float
+            value for the area within the contour
+
+    """
+
     x = contour_array[:, 0]
     y = contour_array[:, 1]
 
     area = 0
+
     for i in arange(1, len(y) - 1, 1):
         area += (y[i - 1] * x[i] - x[i - 1] * y[i])
     return area / 2.0
 
 
 def get_area(x, y, scanning_window=1):
+
+    """ This function calculates the area of a set of scattered points.
+
+        Parameters
+        ----------
+        x: array
+            x axis coordinates
+
+        y: array
+            y axis coordinates
+
+        scanning_window: float
+            Value for the segmentation window. 0 to use the mean distance between points.
+
+        Returns
+        -------
+        area: float
+            value for the area within the contour
+
+     """
 
     scanning_window, points_total, points_on_window, index_on_window = get_windows(x, y, scanning_window)
 
@@ -380,6 +449,14 @@ def generate_random_circle():
     return t, x, y
 
 
+def generate_random_data(xlim, ylim, number_points):
+    x = []
+    y = []
+    [[x.append(random.uniform(xlim[0], xlim[1])), y.append(random.uniform(ylim[0], ylim[1]))] for _ in arange(0, number_points)]
+
+    return x, y
+
+
 def check_incremental_s(s):
     """ This function verifies if s is gradually increasing.
 
@@ -403,37 +480,50 @@ def check_incremental_s(s):
 #                          #
 ############################
 
-def regularPlot(x,y,title,xlabel,ylabel,fontsize = 20):
-  fig = plt.figure()
-  plt.plot(x,y)
-  plt.xlabel(xlabel)
-  plt.ylabel(ylabel)
-  plt.title(title, fontsize = fontsize)
 
-  return fig
+def regular_plot(x, y, title, xlabel, ylabel, fontsize=20, plot_line='-'):
 
-def twoPlots(xx,yy,titles,xlabels,ylabels,fontsizes = [20,20]):
-  fig = plt.figure()
-  for i in xrange(0,2):
-    plt.subplot(2,1,i+1)
-    plt.plot(xx[i],yy[i],'o--')
-    plt.xlabel(xlabels[i])
-    plt.ylabel(ylabels[i])
-    plt.title(titles[i], fontsize = fontsizes[i])
-  
-  return fig
+    fig = plt.figure()
+    plt.plot(x, y, plot_line)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title, fontsize=fontsize)
 
-def overlap(xx,yy,title,xlabel,ylabel,legend,fontsize = 20):
-  fig = plt.figure()
-  for i in xrange(0,2):
-    plt.plot(xx[i],yy[i])
+    return fig
+
+
+def two_plots(xx, yy, titles, xlabels, ylabels, fontsizes=[20,20], plot_line=['-', '-']):
+    fig = plt.figure()
+    for i in xrange(0, 2):
+        plt.subplot(2, 1, i+1)
+        plt.plot(xx[i], yy[i], plot_line[i])
+        plt.xlabel(xlabels[i])
+        plt.ylabel(ylabels[i])
+        plt.title(titles[i], fontsize=fontsizes[i])
   
-  plt.xlabel(xlabel)
-  plt.ylabel(ylabel)
-  plt.title(title, fontsize = fontsize)
-  plt.legend(legend)
+    return fig
+
+
+def overlap(xx, yy, title, xlabel, ylabel, legend, fontsize=20, plot_line=['-', '-']):
+    fig = plt.figure()
+    for i in xrange(0, 2):
+        plt.plot(xx[i], yy[i], plot_line[i])
   
-  return fig
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title, fontsize=fontsize)
+    plt.legend(legend)
+  
+    return fig
+
+############################
+#                          #
+#      Bokeh Plotting      #
+#                          #
+############################
+
+def print_simple_bokeh(x, y)
+
 
 ############################
 #                          #
@@ -441,21 +531,11 @@ def overlap(xx,yy,title,xlabel,ylabel,legend,fontsize = 20):
 #                          #
 ############################
 
+# Random scatter data
 
-x = []
-y = []
-[[x.append(random.uniform(-2, 40)), y.append(random.uniform(-40, 15))] for _ in arange(0, 20)]
+x, y = generate_random_data([-20, 20], [-20, 20], 1000)
 
-
-
-#[t,x,y] = generate_circle(r=2)
-
-#x = [0, 10, 20, 30, 40]
-#y = [0, 10, -10, 5, -10]
-
-
-
-figure1 = regularPlot(x, y, "Generated Data", "x", "y")
+figure1 = regular_plot(x, y, "Generated Data", "x", "y", plot_line='o')
 
 area = get_area(x, y, scanning_window=0)
 
