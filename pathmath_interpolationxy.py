@@ -153,6 +153,28 @@ def get_path_smooth_t(t, x, y, begin_interp=0, end_interp=-1, ttol=0.1, smoothin
 
 
 def join_and_sort(x, y):
+
+    """ This function joins x and y arrays and sorts array elements using the x axis
+
+    Parameters
+    ----------
+    x: array
+      x axis coordinates
+    y: array
+      y axis coordinates
+
+    Returns
+    -------
+    new_x: array
+        x axis coordinates sorted
+
+    new_y: array
+        y axis coordinates sorted
+
+    x_y_sorted: array
+        joint sorted x and y coordinates
+    """
+
     x_y = [[x[i], y[i], i] for i in arange(0, len(x))]
     x_y_sorted = array(sorted(x_y, key=lambda h: h[0]))
 
@@ -162,7 +184,29 @@ def join_and_sort(x, y):
     return new_x, new_y, x_y_sorted
 
 
-def get_windows(x, y, scanning_window = 0):
+def get_windows(x, y, scanning_window=0):
+
+    """ This function joins x and y arrays and sorts array elements using the x axis
+
+        Parameters
+        ----------
+        x: array
+          x axis coordinates
+        y: array
+          y axis coordinates
+
+        Returns
+        -------
+        new_x: array
+            x axis coordinates sorted
+
+        new_y: array
+            y axis coordinates sorted
+
+        x_y_sorted: array
+            joint sorted x and y coordinates
+        """
+
     def list_populator(indexes):
         points = []
         index_on_window.append(indexes)
@@ -238,6 +282,7 @@ def get_area(x, y, scanning_window=1):
     return area
 
 ###
+
 
 def get_s(x, y):
     """ This function calculates the distance traveled.
