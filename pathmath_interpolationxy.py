@@ -328,11 +328,24 @@ def add_number_label(contour_array):
 
 
 def uncrosser(contour_array):
-    array = []
-    index_available = arange(0,len(contour_array))
-    print index_available
-    EucleadianDist(contour_array[0], contour_array)
+    new_path = [contour_array[0]]
+    index_available = arange(1, len(contour_array))
+    for i in arange(0,4):
+        distances = EucleadianDist(contour_array[i], contour_array)
+        index, index_available = get_next_index(index_available, distances[:, 1])
+        new_path.append(contour_array[index])
 
+    new_path.append(contour_array[0])
+    new_path = array(new_path)
+
+    plt.plot(new_path[:, 0], new_path[:, 1], 'g--')
+    print new_path
+
+def get_next_index(index_available, possible_indexes):
+    for i in possible_indexes:
+        if i in index_available:
+            index_available = delete(index_available, find(index_available==i))
+            return int(i), index_available
 
 
 def EucleadianDist(u, v):
