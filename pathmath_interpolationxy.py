@@ -1,7 +1,7 @@
 import numpy.random
 from numpy import *
 from pylab import *
-from scipy import interpolate
+from scipy import interpolate, spatial
 import random
 import os
 from numpy.testing import assert_almost_equal, assert_approx_equal
@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import bokeh as bk
 from bokeh.io import hplot
 from bokeh.plotting import figure, output_file, show
+from COPs import COPy, COPx, smooth
 
 
 
@@ -221,7 +222,18 @@ def get_windows(x, y, scanning_window=0):
         """
 
     def list_populator(indexes):
+        indexes = array(indexes)
         points = []
+
+        dup_x = find(diff(new_x[indexes]) == 0)
+        dup_y = find(diff(new_y[indexes]) == 0)
+
+        index_equal = find(dup_x == dup_y)
+        if len(index_equal) != 0:
+
+            index_2_del = dup_x[index_equal]
+            indexes = delete(indexes, index_2_del)
+
         index_on_window.append(indexes)
         [[points.append([new_x[i], new_y[i]]), points_total.append([new_x[i], new_y[i]])] for i in indexes]
         points_on_window.append(points)
@@ -237,6 +249,7 @@ def get_windows(x, y, scanning_window=0):
         scanning_window = mean(abs(diff(new_x)))
 
     while window_end < new_x[len(new_x)-1] + scanning_window:
+
 
         window_start = window_end
         window_end = window_start + scanning_window
@@ -285,19 +298,60 @@ def area_contour(points_total, show_plot=False):
     points_negative = points_total[(points_total[:, 1] < 0), :]
 
     points_reshape = points_positive
-    points_reshape = concatenate([points_reshape, flipud(points_negative), [points_positive[0, :]]])
+    if len(points_positive) > 0:
+        points_reshape = concatenate([points_reshape, flipud(points_negative), [points_positive[0, :]]])
+    else:
+        points_negative = flipud(points_negative)
+        points_reshape = concatenate([points_negative, [points_negative[0, :]]])
 
     if show_plot:
 
         plt.plot(points_reshape[:, 0], points_reshape[:, 1], 'r--')
-        regular_plot(points_reshape[:, 0], points_reshape[:, 1], 'Area Contour', 'x', 'y', plot_line='r-')
-        plt.fill_between(points_reshape[:, 0], points_reshape[:, 1])
+        regular_plot(points_reshape[:, 0], points_reshape[:, 1], 'Area Contour', 'x', 'y', plot_line='r-o')
+        plt.fill_between(points_reshape[:, 0], min(points_reshape[:, 1]), points_reshape[:, 1])
 
     return points_reshape
 
+def add_number_label(contour_array):
+    plt.text(contour_array[0, 0] + 0.10, contour_array[0, 1], '1')
+    plt.text(contour_array[1, 0], contour_array[1, 1] + 0.10, '2')
+    plt.text(contour_array[2, 0], contour_array[2, 1] - 0.15, '3')
+    plt.text(contour_array[3, 0], contour_array[3, 1] - 0.15, '4')
+    plt.text(contour_array[4, 0] + 0.03, contour_array[4, 1] + 0.05, '5')
+    plt.text(contour_array[5, 0], contour_array[5, 1] + 0.10, '6')
+    plt.text(contour_array[6, 0], contour_array[6, 1] - 0.15, '7')
+    plt.text(contour_array[7, 0], contour_array[7, 1] - 0.15, '8')
+    plt.text(contour_array[8, 0] + 0.03, contour_array[8, 1] + 0.05, '9')
+    plt.text(contour_array[9, 0], contour_array[9, 1] + 0.10, '10')
+    plt.text(contour_array[10, 0], contour_array[10, 1] - 0.15, '11')
+    plt.text(contour_array[11, 0] - 0.10, contour_array[11, 1], '12')
+
+
+def uncrosser(contour_array):
+    array = []
+    index_available = arange(0,len(contour_array))
+    print index_available
+    EucleadianDist(contour_array[0], contour_array)
+
+
+
+def EucleadianDist(u, v):
+    distance = zeros(shape(v))
+    for i in range(0, len(v)):
+        distance[i][0] = sqrt((u[0] - v[i][0]) ** 2 + (u[1] - v[i][1]) ** 2)
+        distance[i][1] = i
+    distance = array(sorted(distance, key=lambda h: h[0]))
+    temp_index = find(distance[:, 0] == 0)[-1]
+    if len(distance) > temp_index+1:
+        distance = distance[temp_index+1:]
+    if distance[0, 1] == 0 and distance[1, 1] == 12:
+        distance = distance[1:]
+        distance[0, 1] = 0
+    return distance
+
 
 def area_calc(contour_array):
-
+    uncrosser(contour_array)
     """ This function uses the contour path to calculate the area, using Green's theorem.
 
         Parameters
@@ -322,7 +376,7 @@ def area_calc(contour_array):
     return area / 2.0
 
 
-def get_area(x, y, scanning_window=1):
+def get_area(x, y, scanning_window=1, show_plot=False):
 
     """ This function calculates the area of a set of scattered points.
 
@@ -346,7 +400,7 @@ def get_area(x, y, scanning_window=1):
 
     scanning_window, points_total, points_on_window, index_on_window = get_windows(x, y, scanning_window)
 
-    contour_array = area_contour(points_total, True)
+    contour_array = area_contour(points_total, show_plot)
 
     area = area_calc(contour_array)
 
@@ -554,17 +608,24 @@ def bokeh_subplot(x, y, title, xlabel, ylabel):
 
 # Random scatter data
 
-x, y = generate_random_data([-20, 20], [-20, 20], 100)
 
-figure1 = regular_plot(x, y, "Generated Data", "x", "y", plot_line='o')
 
-area, contour_array = get_area(x, y, scanning_window=0)
+#x, y = generate_random_data([-20, 20], [-20, 20], 100)
 
-print area
 
-print_simple_bokeh(x, y, "Generated Data", "x", "y")
+area, contour_array = get_area(COPx[0:20], COPy[0:20], scanning_window=0, show_plot=True)
 
-bokeh_subplot([x, contour_array[:, 0]], [y, contour_array[:, 1]], ["Generated Data", "Contour Plot"], ["x", "x"], ["y", "y"])
+#print area
+
+#print_simple_bokeh(contour_array[:, 0], contour_array[:, 1], "Generated Data", "x", "y")
+
+figure1 = regular_plot(contour_array[:, 0], contour_array[:, 1], "Generated Data", "x", "y", plot_line='o--')
+
+
+
+
+
+#bokeh_subplot([x, contour_array[:, 0]], [y, contour_array[:, 1]], ["Generated Data", "Contour Plot"], ["x", "x"], ["y", "y"])
 
 
 plt.show()
