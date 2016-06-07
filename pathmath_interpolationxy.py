@@ -313,45 +313,43 @@ def area_contour(points_total, show_plot=False):
     return points_reshape
 
 def add_number_label(contour_array):
-    plt.text(contour_array[0, 0] + 0.10, contour_array[0, 1], '1')
-    plt.text(contour_array[1, 0], contour_array[1, 1] + 0.10, '2')
-    plt.text(contour_array[2, 0], contour_array[2, 1] - 0.15, '3')
-    plt.text(contour_array[3, 0], contour_array[3, 1] - 0.15, '4')
-    plt.text(contour_array[4, 0] + 0.03, contour_array[4, 1] + 0.05, '5')
-    plt.text(contour_array[5, 0], contour_array[5, 1] + 0.10, '6')
-    plt.text(contour_array[6, 0], contour_array[6, 1] - 0.15, '7')
-    plt.text(contour_array[7, 0], contour_array[7, 1] - 0.15, '8')
-    plt.text(contour_array[8, 0] + 0.03, contour_array[8, 1] + 0.05, '9')
-    plt.text(contour_array[9, 0], contour_array[9, 1] + 0.10, '10')
-    plt.text(contour_array[10, 0], contour_array[10, 1] - 0.15, '11')
-    plt.text(contour_array[11, 0] - 0.10, contour_array[11, 1], '12')
+    plt.text(contour_array[0, 0] + 0.10, contour_array[0, 1], '0')
+    plt.text(contour_array[1, 0], contour_array[1, 1] + 0.10, '1')
+    plt.text(contour_array[2, 0], contour_array[2, 1] - 0.15, '2')
+    plt.text(contour_array[3, 0], contour_array[3, 1] - 0.15, '3')
+    plt.text(contour_array[4, 0] + 0.03, contour_array[4, 1] + 0.05, '4')
+    plt.text(contour_array[5, 0], contour_array[5, 1] + 0.10, '5')
+    plt.text(contour_array[6, 0], contour_array[6, 1] - 0.15, '6')
+    plt.text(contour_array[7, 0], contour_array[7, 1] - 0.15, '7')
+    plt.text(contour_array[8, 0] + 0.03, contour_array[8, 1] + 0.05, '8')
+    plt.text(contour_array[9, 0], contour_array[9, 1] + 0.10, '9')
+    plt.text(contour_array[10, 0], contour_array[10, 1] - 0.15, '10')
+    plt.text(contour_array[11, 0] - 0.10, contour_array[11, 1], '11')
 
 
-def uncrosser(contour_array):
-    new_path = [contour_array[0]]
+def uncrosser_shortest_dist(contour_array):
+    new_path = array([contour_array[0]])
     index_available = arange(1, len(contour_array))
-    for i in arange(0,4):
-        distances = EucleadianDist(contour_array[i], contour_array)
-        index, index_available = get_next_index(index_available, distances[:, 1])
-        new_path.append(contour_array[index])
-
-    new_path.append(contour_array[0])
-    new_path = array(new_path)
+    index = 0
+    while len(index_available) > 0:
+        index, index_available = get_next_index(index_available, eucleadian_dist(contour_array[index], contour_array)[:, 1])
+        new_path = concatenate([new_path, [contour_array[index]]])
 
     plt.plot(new_path[:, 0], new_path[:, 1], 'g--')
-    print new_path
+    return new_path
+
 
 def get_next_index(index_available, possible_indexes):
     for i in possible_indexes:
         if i in index_available:
-            index_available = delete(index_available, find(index_available==i))
+            index_available = delete(index_available, find(index_available == i))
             return int(i), index_available
 
 
-def EucleadianDist(u, v):
+def eucleadian_dist(u, v):
     distance = zeros(shape(v))
     for i in range(0, len(v)):
-        distance[i][0] = sqrt((u[0] - v[i][0]) ** 2 + (u[1] - v[i][1]) ** 2)
+        distance[i][0] = sqrt((u[0] - v[i][0]) ** 2.0 + (u[1] - v[i][1]) ** 2.0)
         distance[i][1] = i
     distance = array(sorted(distance, key=lambda h: h[0]))
     temp_index = find(distance[:, 0] == 0)[-1]
@@ -364,7 +362,7 @@ def EucleadianDist(u, v):
 
 
 def area_calc(contour_array):
-    uncrosser(contour_array)
+    uncrosser_shortest_dist(contour_array)
     """ This function uses the contour path to calculate the area, using Green's theorem.
 
         Parameters
@@ -626,7 +624,7 @@ def bokeh_subplot(x, y, title, xlabel, ylabel):
 #x, y = generate_random_data([-20, 20], [-20, 20], 100)
 
 
-area, contour_array = get_area(COPx[0:20], COPy[0:20], scanning_window=0, show_plot=True)
+area, contour_array = get_area(COPx, COPy, scanning_window=2, show_plot=True)
 
 #print area
 
