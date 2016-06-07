@@ -330,21 +330,32 @@ def add_number_label(contour_array):
 def uncrosser_shortest_dist(contour_array):
     new_path = array([contour_array[0]])
     index_available = arange(1, len(contour_array))
+
+    index, sense_of_direction = uncrosser_start(contour_array)
+    get_next_index(index_available, contour_array, index, sense_of_direction)
+
+    #while len(index_available) > 0:
+
+
+def uncrosser_start(contour_array):
     index = 0
-    while len(index_available) > 0:
-        index, index_available = get_next_index(index_available, eucleadian_dist(contour_array[index], contour_array)[:, 1])
-        new_path = concatenate([new_path, [contour_array[index]]])
+    min_index = where(contour_array[:, 0] == min(contour_array[:, 0]))[0][0]
+    max_index = where(contour_array[:, 0] == max(contour_array[:, 0]))[0][0]
+    if index != max_index:
+        direction = True  # From min to max
+    else:
+        direction = False
 
-    plt.plot(new_path[:, 0], new_path[:, 1], 'g--')
-    return new_path
+    sense_of_direction = [min_index, max_index, direction]
+    return index, sense_of_direction
 
 
-def get_next_index(index_available, possible_indexes):
-    for i in possible_indexes:
-        if i in index_available:
-            index_available = delete(index_available, find(index_available == i))
-            return int(i), index_available
+def get_next_index(index_available, contour_array, index, sense_of_direction):
+    distances = eucleadian_dist(contour_array[index], contour_array)
+    for i in distances[:, 1]:
+        print distances[:, 1], i
 
+    # index_available = delete(index_available, find(index_available == i))
 
 def eucleadian_dist(u, v):
     distance = zeros(shape(v))
