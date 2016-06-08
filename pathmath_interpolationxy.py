@@ -319,8 +319,8 @@ def uncrosser_shortest_dist(contour_array):
     index_available = arange(1, len(contour_array))
 
     index, sense_of_direction = uncrosser_start(contour_array)
+
     while len(index_available) > 0:
-        index, index_available, sense_of_direction = get_next_index(index_available, contour_array, index, sense_of_direction)
         new_path = concatenate([new_path, [contour_array[index]]])
 
     new_path = concatenate([new_path, [contour_array[0]]])
@@ -343,38 +343,54 @@ def uncrosser_start(contour_array):
 
     return index, sense_of_direction
 
-
-def index_for_direction(index_available, direction, contour_array, index):
-    x_availables = contour_array[index_available, 0]
-    x_index = contour_array[index, 0]
-
-    if direction:
-        index_of_index = where(x_availables >= x_index)[0]
-    else:
-        index_of_index = where(x_availables <= x_index)[0]
-
-    return index_available[index_of_index]
+def get_next_index(current_index, index_available, contour_array, sense_of_direction, trend):
+    # Get distances from the current index to the available ones
 
 
-def change_of_direction(index, sense_of_direction):
-    if index == sense_of_direction[0]:
-        sense_of_direction[2] = True
-    elif index == sense_of_direction[1]:
-        sense_of_direction[2] = False
-    else:
-        sense_of_direction = sense_of_direction
-
-    return sense_of_direction
+    # Filter using the direction of the contour
 
 
-def get_next_index(index_available, contour_array, index, sense_of_direction):
-    distances = eucleadian_dist(contour_array[index], contour_array)
-    new_index_available = index_for_direction(index_available, sense_of_direction[2], contour_array, index)
-    for i in distances[:, 1]:
-        if i in new_index_available:
-            index_available = delete(index_available, find(index_available == i))
-            sense_of_direction = change_of_direction(i, sense_of_direction)
-            return int(i), index_available, sense_of_direction
+    # Select the x closer points
+
+
+    # Score from 0 to x based on the distance, being x the furthest
+
+
+    # Score based on the trend (if from the last and current index the x went up or went down)
+
+
+    # Sum 2 scores
+
+
+    # 2+ same scores?
+
+        # Yes
+
+            # Only one point not following the trend?
+
+                # Yes
+
+                    # Get the closest
+
+                # No
+
+                    # Get new index using the lowest trend score
+
+        # No
+
+            # Get new index using the lowest trend score
+
+
+    # Get new trend
+
+
+    # Check direction
+
+
+    # Update available indexes
+
+
+# index_available = delete(index_available, find(index_available == i))
 
 def eucleadian_dist(u, v):
     distance = zeros(shape(v))
