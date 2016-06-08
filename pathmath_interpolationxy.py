@@ -312,20 +312,6 @@ def area_contour(points_total, show_plot=False):
 
     return points_reshape
 
-def add_number_label(contour_array):
-    plt.text(contour_array[0, 0] + 0.10, contour_array[0, 1], '0')
-    plt.text(contour_array[1, 0], contour_array[1, 1] + 0.10, '1')
-    plt.text(contour_array[2, 0], contour_array[2, 1] - 0.15, '2')
-    plt.text(contour_array[3, 0], contour_array[3, 1] - 0.15, '3')
-    plt.text(contour_array[4, 0] + 0.03, contour_array[4, 1] + 0.05, '4')
-    plt.text(contour_array[5, 0], contour_array[5, 1] + 0.10, '5')
-    plt.text(contour_array[6, 0], contour_array[6, 1] - 0.15, '6')
-    plt.text(contour_array[7, 0], contour_array[7, 1] - 0.15, '7')
-    plt.text(contour_array[8, 0] + 0.03, contour_array[8, 1] + 0.05, '8')
-    plt.text(contour_array[9, 0], contour_array[9, 1] + 0.10, '9')
-    plt.text(contour_array[10, 0], contour_array[10, 1] - 0.15, '10')
-    plt.text(contour_array[11, 0] - 0.10, contour_array[11, 1], '11')
-
 
 def uncrosser_shortest_dist(contour_array):
 
@@ -333,8 +319,7 @@ def uncrosser_shortest_dist(contour_array):
     index_available = arange(1, len(contour_array))
 
     index, sense_of_direction = uncrosser_start(contour_array)
-    while len(index_available) > 15:
-        print len(index_available)
+    while len(index_available) > 0:
         index, index_available, sense_of_direction = get_next_index(index_available, contour_array, index, sense_of_direction)
         new_path = concatenate([new_path, [contour_array[index]]])
 
@@ -362,11 +347,12 @@ def uncrosser_start(contour_array):
 def index_for_direction(index_available, direction, contour_array, index):
     x_availables = contour_array[index_available, 0]
     x_index = contour_array[index, 0]
-    print direction
+
     if direction:
         index_of_index = where(x_availables >= x_index)[0]
     else:
         index_of_index = where(x_availables <= x_index)[0]
+
     return index_available[index_of_index]
 
 
@@ -380,6 +366,7 @@ def change_of_direction(index, sense_of_direction):
 
     return sense_of_direction
 
+
 def get_next_index(index_available, contour_array, index, sense_of_direction):
     distances = eucleadian_dist(contour_array[index], contour_array)
     new_index_available = index_for_direction(index_available, sense_of_direction[2], contour_array, index)
@@ -387,7 +374,7 @@ def get_next_index(index_available, contour_array, index, sense_of_direction):
         if i in new_index_available:
             index_available = delete(index_available, find(index_available == i))
             sense_of_direction = change_of_direction(i, sense_of_direction)
-            return i, index_available, sense_of_direction
+            return int(i), index_available, sense_of_direction
 
 def eucleadian_dist(u, v):
     distance = zeros(shape(v))
@@ -667,7 +654,7 @@ def bokeh_subplot(x, y, title, xlabel, ylabel):
 #x, y = generate_random_data([-20, 20], [-20, 20], 100)
 
 
-area, contour_array = get_area(COPx, COPy, scanning_window=1, show_plot=True)
+area, contour_array = get_area(COPx[0:20], COPy[0:20], scanning_window=0, show_plot=True)
 
 #print area
 
