@@ -321,6 +321,7 @@ def uncrosser_shortest_dist(contour_array):
     index, sense_of_direction = uncrosser_start(contour_array)
 
     while len(index_available) > 0:
+        get_next_index(index, index_available, contour_array, sense_of_direction, "1")
         new_path = concatenate([new_path, [contour_array[index]]])
 
     new_path = concatenate([new_path, [contour_array[0]]])
@@ -343,13 +344,38 @@ def uncrosser_start(contour_array):
 
     return index, sense_of_direction
 
+
+def direction_filter(current_index, available_indexes, points_array, direction):
+
+    available_x = points_array[available_indexes, 0]
+    current_x = points_array[current_index, 0]
+
+    if direction:
+        return available_indexes[where(available_x >= current_x)[0]]
+    else:
+        return available_indexes[where(available_x <= current_x)[0]]
+
+
 def get_next_index(current_index, index_available, contour_array, sense_of_direction, trend):
-    # Get distances from the current index to the available ones
-
-
     # Filter using the direction of the contour
 
+    filtered_indexes = direction_filter(current_index, index_available, contour_array, sense_of_direction[2])
 
+    # Get distances from the current index to the available ones
+
+    distance = zeros((len(filtered_indexes), 2))
+
+    for i in range(0, len(filtered_indexes)):
+        distance[i][0] = sqrt((contour_array[current_index][0] - contour_array[filtered_indexes[i]][0]) ** 2.0 +
+                              (contour_array[current_index][1] - contour_array[filtered_indexes[i]][1]) ** 2.0)
+        distance[i][1] = filtered_indexes[i]
+
+    distance = array(sorted(distance, key=lambda h: h[0]))
+
+    if current_index == 0 and distance[0, 1] == 12:
+        distance = distance[1:]
+
+    print distance
     # Select the x closer points
 
 
@@ -392,19 +418,6 @@ def get_next_index(current_index, index_available, contour_array, sense_of_direc
 
 # index_available = delete(index_available, find(index_available == i))
 
-def eucleadian_dist(u, v):
-    distance = zeros(shape(v))
-    for i in range(0, len(v)):
-        distance[i][0] = sqrt((u[0] - v[i][0]) ** 2.0 + (u[1] - v[i][1]) ** 2.0)
-        distance[i][1] = i
-    distance = array(sorted(distance, key=lambda h: h[0]))
-    temp_index = find(distance[:, 0] == 0)[-1]
-    if len(distance) > temp_index+1:
-        distance = distance[temp_index+1:]
-    if distance[0, 1] == 0 and distance[1, 1] == 12:
-        distance = distance[1:]
-        distance[0, 1] = 0
-    return distance
 
 
 def area_calc(contour_array):
