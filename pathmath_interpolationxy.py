@@ -1,6 +1,7 @@
 import numpy.random
 from numpy import *
 from pylab import *
+import scipy as sc
 from scipy import interpolate, spatial
 import random
 import os
@@ -306,7 +307,7 @@ def area_contour(points_total, show_plot=False):
 
     if show_plot:
 
-        plt.plot(points_reshape[:, 0], points_reshape[:, 1], 'r--')
+        plt.plot(points_reshape[:, 0], points_reshape[:, 1], 'ro--')
         regular_plot(points_reshape[:, 0], points_reshape[:, 1], 'Area Contour', 'x', 'y', plot_line='r-o')
         plt.fill_between(points_reshape[:, 0], min(points_reshape[:, 1]), points_reshape[:, 1])
 
@@ -319,9 +320,11 @@ def uncrosser_shortest_dist(contour_array):
     index_available = arange(1, len(contour_array))
 
     index, sense_of_direction = uncrosser_start(contour_array)
+    trend = True
 
-    while len(index_available) > 0:
-        get_next_index(index, index_available, contour_array, sense_of_direction, "1")
+    while len(index_available) > 21:
+        index, trend, sense_of_direction, index_available = get_next_index(index, index_available, contour_array, sense_of_direction, trend)
+
         new_path = concatenate([new_path, [contour_array[index]]])
 
     new_path = concatenate([new_path, [contour_array[0]]])
@@ -332,17 +335,16 @@ def uncrosser_shortest_dist(contour_array):
 
 
 def uncrosser_start(contour_array):
-    index = 0
+
+
     min_index = where(contour_array[:, 0] == min(contour_array[:, 0]))[0][0]
     max_index = where(contour_array[:, 0] == max(contour_array[:, 0]))[0][0]
-    if index != max_index:
-        direction = True  # From min to max
-    else:
-        direction = False
+
+    direction = True
 
     sense_of_direction = [min_index, max_index, direction]
 
-    return index, sense_of_direction
+    return min_index, sense_of_direction
 
 
 def direction_filter(current_index, available_indexes, points_array, direction):
@@ -357,71 +359,144 @@ def direction_filter(current_index, available_indexes, points_array, direction):
 
 
 def get_next_index(current_index, index_available, contour_array, sense_of_direction, trend):
+
+    bypass = False
+
     # Filter using the direction of the contour
 
     filtered_indexes = direction_filter(current_index, index_available, contour_array, sense_of_direction[2])
+
 
     # Get distances from the current index to the available ones
 
     distance = zeros((len(filtered_indexes), 2))
 
     for i in range(0, len(filtered_indexes)):
-        distance[i][0] = sqrt((contour_array[current_index][0] - contour_array[filtered_indexes[i]][0]) ** 2.0 +
-                              (contour_array[current_index][1] - contour_array[filtered_indexes[i]][1]) ** 2.0)
+        distance[i][0] = abs(contour_array[current_index, 0] - contour_array[filtered_indexes[i], 0])
+        #distance[i][0] = spatial.distance.euclidean(contour_array[current_index], contour_array[filtered_indexes[i]])
         distance[i][1] = filtered_indexes[i]
 
     distance = array(sorted(distance, key=lambda h: h[0]))
 
-    if current_index == 0 and distance[0, 1] == 12:
-        distance = distance[1:]
-
-    print distance
     # Select the x closer points
+
+    num_of_points = 3
+
+    if len(distance) < num_of_points:
+        num_of_points = len(distance)
+
+    closer_points = distance[arange(0, num_of_points), :]
 
 
     # Score from 0 to x based on the distance, being x the furthest
 
+    score_dist = arange(0, len(closer_points))
 
     # Score based on the trend (if from the last and current index the x went up or went down)
+    if not bypass:
+
+        score_trend = zeros((len(closer_points), 3))
+        y_current_index = contour_array[current_index, 1]
+
+        for i in arange(0, len(closer_points)):
+            score_trend[i][0] = contour_array[int(closer_points[i, 1]), 1]
+            score_trend[i][1] = abs(contour_array[int(closer_points[i, 1]), 1] - y_current_index)
+            score_trend[i][2] = i
+
+        score_trend = array(sorted(score_trend, key=lambda h: h[1]))
+
+        if trend:  # Min Max
+            trend_index = where(score_trend[:, 0] >= y_current_index)[0]
+
+        else:
+            trend_index = where(score_trend[:, 0] <= y_current_index)[0]
+
+        for i in arange(0, len(closer_points)):
+            if i not in trend_index:
+                score_trend[i][0] = i+1
+            else:
+                score_trend[i][0] = 0
+
+        score_trend = array(sorted(score_trend, key=lambda h: h[2]))
+
+        score_trend = score_trend[:, 0]
+
+
+
+    else:
+        score_trend = zeros((len(closer_points), 1))
+        score_trend = score_trend[:, 0]
 
 
     # Sum 2 scores
 
+    total = score_trend + score_dist
+
+    print
+    print distance
+    print current_index
+    print closer_points
+    print total, score_trend
 
     # 2+ same scores?
 
-        # Yes
+    seen = set()
+    uniq = [x for x in total if x not in seen and not seen.add(x)]
 
-            # Only one point not following the trend?
+    # Yes
 
-                # Yes
+    if len(uniq) != len(total):
 
-                    # Get the closest
+        # Only one point not following the trend?
 
-                # No
+            # Yes
 
-                    # Get new index using the lowest trend score
+            if len(where(score_trend != 0)[0]) == 1 or len(uniq) == 1:
 
-        # No
+                # Get the closest
 
-            # Get new index using the lowest trend score
+                new_index = int(closer_points[0, 1])
 
+            # No
+
+            else:
+
+                # Get new index using the lowest trend score
+
+                new_index = int(closer_points[where(score_trend == min(score_trend))][0][1])
+    # No
+
+    else:
+        # Get new index using the lowest sum score
+
+        new_index = int(closer_points[where(total == min(total))][0][1])
 
     # Get new trend
 
+    if (contour_array[new_index, 1] > contour_array[current_index, 1]):
+        trend = True
+
+    else:
+        trend = False
 
     # Check direction
 
+    if new_index == sense_of_direction[0]:
+        sense_of_direction[2] = True
+
+    elif new_index == sense_of_direction[1]:
+        sense_of_direction[2] = False
 
     # Update available indexes
 
+    index_available = delete(index_available, find(index_available == new_index))
 
-# index_available = delete(index_available, find(index_available == i))
+    return new_index, trend, sense_of_direction, index_available
 
 
 
 def area_calc(contour_array):
-    uncrosser_shortest_dist(contour_array)
+    uncrosser_shortest_dist(contour_array[:len(contour_array)-2])
     """ This function uses the contour path to calculate the area, using Green's theorem.
 
         Parameters
@@ -683,7 +758,7 @@ def bokeh_subplot(x, y, title, xlabel, ylabel):
 #x, y = generate_random_data([-20, 20], [-20, 20], 100)
 
 
-area, contour_array = get_area(COPx[0:20], COPy[0:20], scanning_window=0, show_plot=True)
+area, contour_array = get_area(COPx, COPy, scanning_window=1, show_plot=True)
 
 #print area
 
