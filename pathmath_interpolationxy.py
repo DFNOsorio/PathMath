@@ -9,11 +9,9 @@ from numpy.testing import assert_almost_equal, assert_approx_equal
 
 import seaborn
 import matplotlib.pyplot as plt
-import bokeh as bk
-from bokeh.io import hplot
-from bokeh.plotting import figure, output_file, show
+from plot_lib import print_simple_bokeh
 from COPs import COPy, COPx, smooth
-from area_calculator import new_contour
+from contouring import new_contour
 
 
 
@@ -252,7 +250,6 @@ def get_windows(x, y, scanning_window=0):
 
     while window_end < new_x[len(new_x)-1] + scanning_window:
 
-
         window_start = window_end
         window_end = window_start + scanning_window
 
@@ -292,8 +289,6 @@ def area_calc(contour_array):
             value for the area within the contour
 
     """
-
-
     x = contour_array[:, 0]
     y = contour_array[:, 1]
 
@@ -304,7 +299,7 @@ def area_calc(contour_array):
     return area / 2.0
 
 
-def get_area(x, y, scanning_window=1, show_plot=False):
+def get_area(x, y, scanning_window=1):
 
     """ This function calculates the area of a set of scattered points.
 
@@ -500,34 +495,7 @@ def overlap(xx, yy, title, xlabel, ylabel, legend, fontsize=20, plot_line=['-', 
   
     return fig
 
-############################
-#                          #
-#      Bokeh Plotting      #
-#                          #
-############################
 
-
-def print_simple_bokeh(x, y, title, xlabel, ylabel):
-
-    bk.plotting.output_file("scatter_data.html")
-    p = bk.plotting.figure(title=title, x_axis_label=xlabel, y_axis_label=ylabel)
-    p.line(x, y)
-    bk.plotting.show(p)
-
-
-def bokeh_subplot(x, y, title, xlabel, ylabel):
-    bk.plotting.output_file("subplot_data.html")
-    s1 = bk.plotting.figure(title=title[0], x_axis_label=xlabel[0], y_axis_label=ylabel[0])
-    s1.circle(x[0], y[0], size=5, color='firebrick', alpha=0.5)
-    s1.line(x[1], y[1], alpha=0.5, line_width=2, line_dash="dashed")
-
-    s2 = bk.plotting.figure(title=title[1], x_axis_label=xlabel[1], y_axis_label=ylabel[1])
-    s2.circle(x[1], y[1], size=5, color='olive', alpha=0.5)
-    s2.patch(x[1], y[1], alpha=0.5, line_width=2)
-
-    p = hplot(s1, s2)
-
-    bk.plotting.show(p)
 ############################
 #                          #
 #      To Be Deleted       #
@@ -541,24 +509,13 @@ def bokeh_subplot(x, y, title, xlabel, ylabel):
 #x, y = generate_random_data([-20, 20], [-20, 20], 100)
 
 
-#area, contour_array = get_area(COPx, COPy, scanning_window=1, show_plot=True)
+area, contour_array = get_area(COPx, COPy, scanning_window=2)
 
-area, contour_final = get_area(COPx, COPy, scanning_window=0, show_plot=True)
-
-#print area
-
-#print_simple_bokeh(contour_array[:, 0], contour_array[:, 1], "Generated Data", "x", "y")
-
-figure1 = regular_plot(contour_final[:, 0], contour_final[:, 1], "Generated Data", "x", "y", plot_line='o--')
-
-
-
+print_simple_bokeh(contour_array[:, 0], contour_array[:, 1], "hey", "x", "y")
 
 
 #bokeh_subplot([x, contour_array[:, 0]], [y, contour_array[:, 1]], ["Generated Data", "Contour Plot"], ["x", "x"], ["y", "y"])
 
-
-plt.show()
 
 
 # [t,x,y] =  generate_circle(r=2)
