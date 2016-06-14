@@ -276,45 +276,6 @@ def get_windows(x, y, scanning_window=0):
     return scanning_window, points_total, points_on_window, index_on_window
 
 
-def area_contour(points_total, show_plot=False):
-
-    """ This function sorts the contour data, using first all the positive y points and afterwards adds all the negative
-    points. It also adds the first point again in order to close the contour.
-
-        Parameters
-        ----------
-        points_total: array
-            x axis coordinates
-
-        show_plot: boolean
-            option to plot the contour
-
-        Returns
-        -------
-        points_reshape: array
-            contour path
-
-        """
-
-    points_positive = points_total[(points_total[:, 1] >= 0), :]
-    points_negative = points_total[(points_total[:, 1] < 0), :]
-
-    points_reshape = points_positive
-    if len(points_positive) > 0:
-        points_reshape = concatenate([points_reshape, flipud(points_negative), [points_positive[0, :]]])
-    else:
-        points_negative = flipud(points_negative)
-        points_reshape = concatenate([points_negative, [points_negative[0, :]]])
-
-    if show_plot:
-
-        plt.plot(points_reshape[:, 0], points_reshape[:, 1], 'ro--')
-        regular_plot(points_reshape[:, 0], points_reshape[:, 1], 'Area Contour', 'x', 'y', plot_line='r-o')
-        plt.fill_between(points_reshape[:, 0], min(points_reshape[:, 1]), points_reshape[:, 1])
-
-    return points_reshape
-
-
 def area_calc(contour_array):
 
 
@@ -367,13 +328,11 @@ def get_area(x, y, scanning_window=1, show_plot=False):
 
     scanning_window, points_total, points_on_window, index_on_window = get_windows(x, y, scanning_window)
 
-    new_path = new_contour(points_on_window)
+    up, down, contour_final = new_contour(points_on_window)
 
-    contour_array = area_contour(points_total, show_plot)
+    area = area_calc(contour_final)
 
-    area = area_calc(contour_array)
-
-    return area, contour_array
+    return area, contour_final
 
 ###
 
@@ -582,13 +541,15 @@ def bokeh_subplot(x, y, title, xlabel, ylabel):
 #x, y = generate_random_data([-20, 20], [-20, 20], 100)
 
 
-area, contour_array = get_area(COPx, COPy, scanning_window=1, show_plot=True)
+#area, contour_array = get_area(COPx, COPy, scanning_window=1, show_plot=True)
+
+area, contour_final = get_area(COPx, COPy, scanning_window=0, show_plot=True)
 
 #print area
 
 #print_simple_bokeh(contour_array[:, 0], contour_array[:, 1], "Generated Data", "x", "y")
 
-figure1 = regular_plot(contour_array[:, 0], contour_array[:, 1], "Generated Data", "x", "y", plot_line='o--')
+figure1 = regular_plot(contour_final[:, 0], contour_final[:, 1], "Generated Data", "x", "y", plot_line='o--')
 
 
 

@@ -1,93 +1,58 @@
 from numpy import *
-from scipy import spatial
 
+def point_checker(point_i, point_i1, point_2_check):
 
-#path to max
+    m = (point_i1[1] - point_i[1]) / (point_i1[0] - point_i[0])
 
-#path to min
+    b = point_i1[1] - m * point_i1[0]
 
-#dirivadas
+    point_y = m * point_2_check[0] + b
 
-
-def initial_conditions_contour(contour_path):
-
-    min_index_x = where(contour_path[:, 0] == min(contour_path[:, 0]))[0][0]
-    max_index_x = where(contour_path[:, 0] == max(contour_path[:, 0]))[0][0]
-
-    return [min_index_x, max_index_x, "L2R"]
-
-
-def direction_filter(contour_path, current_index, available_indexes, direction):
-
-    available_x = contour_path[available_indexes, 0]
-    current_x = contour_path[current_index, 0]
-
-    if direction == "L2R":
-        return available_indexes[where(available_x >= current_x)[0]]
+    if point_y >= point_2_check[1]:
+        return True
     else:
-        return available_indexes[where(available_x <= current_x)[0]]
+        return False
 
 
-def direction_update(current_index, sense_of_direction):
+def new_contour(points):
+    up = []
+    down = []
+    beging = 0
 
-    if current_index == sense_of_direction[0]:
-        sense_of_direction[2] = "L2R"
-    elif current_index == sense_of_direction[1]:
-        sense_of_direction[2] = "R2L"
+    if len(points[0]) == 1:
+        beging = 1
+        up.append(points[0][0])
+    else:
+        up.append(points[0][0])
+        down.append(points[0][1])
 
-    return sense_of_direction
+    for i in arange(0, 4):
+    #for i in arange(0, len(points)-1):
+        up_point_on_index = up[-1]
 
+        next_points = points[i+1]
 
-def get_scores(decision_array):
+        if len(next_points) > 1:
 
+            up_point_next_index = next_points[0]
+            down_point_next_index = next_points[1]
 
-    print "hey"
+            good = point_checker(up_point_on_index, up_point_next_index, down_point_next_index)
 
+            if good:
+                up.append(up_point_next_index)
+                down.append(down_point_next_index)
+            else:
+                up.append(down_point_next_index)
+                down.append(up_point_next_index)
 
-def get_next_index(contour_path, current_index, available_indexes):
+        if len(next_points) == 1:
+            down.append(next_points[0])
 
-    decision_array = zeros((len(available_indexes), 6))
-    dist_zero = -1
-
-    for i in range(0, len(available_indexes)):
-        decision_array[i][0] = (contour_path[available_indexes[i]][0] - contour_path[current_index][0])
-        decision_array[i][1] = (contour_path[available_indexes[i]][1] - contour_path[current_index][1])
-
-        decision_array[i][2] = spatial.distance.euclidean(contour_path[current_index], contour_path[available_indexes[i]])
-        if decision_array[i][2] == 0:
-            dist_zero = i
-
-        decision_array[i][3] = decision_array[i][1] / decision_array[i][0]
-
-        decision_array[i][4] = 1 if decision_array[i][1] >= 0 else -1
-        decision_array[i][5] = available_indexes[i]
-
-    if dist_zero != -1:
-        decision_array = delete(decision_array, dist_zero, 0)
-
-    decision = get_scores(decision_array)
-
-    print decision
-
-    return decision[0, 6]
+    contour_final = join_arrays(array(up), array(down))
+    return [array(up), array(down), contour_final]
 
 
-def new_contour(contour_path):
+def join_arrays(up, down):
 
-    sense_of_direction = initial_conditions_contour(contour_path)
-
-    current_index = sense_of_direction[0]
-
-    new_path = [int(current_index)]
-
-    index_available = arange(1, len(contour_path))
-
-    while len(index_available) > 39:
-        print len(index_available)
-        dir_indexes = direction_filter(contour_path, current_index, index_available, sense_of_direction[2])
-        current_index = get_next_index(contour_path, current_index, dir_indexes)
-        sense_of_direction = direction_update(current_index, sense_of_direction)
-        new_path = concatenate([new_path, [int(current_index)]])
-        index_available = delete(index_available, where(index_available == current_index))
-
-    return new_path
+    return concatenate([up, flipud(down), [up[0, :]]])
