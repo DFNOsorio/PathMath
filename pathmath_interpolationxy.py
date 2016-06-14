@@ -10,7 +10,7 @@ from numpy.testing import assert_almost_equal, assert_approx_equal
 import seaborn
 import matplotlib.pyplot as plt
 from plot_lib import print_simple_bokeh
-from COPs import COPy, COPx, smooth
+from COPs import COPy, COPx
 from contouring import new_contour
 
 
@@ -509,7 +509,7 @@ def overlap(xx, yy, title, xlabel, ylabel, legend, fontsize=20, plot_line=['-', 
 #x, y = generate_random_data([-20, 20], [-20, 20], 100)
 
 
-area, contour_array = get_area(COPx, COPy, scanning_window=2)
+area, contour_array = get_area(COPx, COPy, scanning_window=0.1)
 
 print_simple_bokeh(contour_array[:, 0], contour_array[:, 1], "hey", "x", "y")
 
